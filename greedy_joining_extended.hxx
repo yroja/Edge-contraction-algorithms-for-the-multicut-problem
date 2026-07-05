@@ -218,7 +218,30 @@ greedy_joining(size_t n, std::vector<std::array<size_t, 2>> edges, std::vector<V
     return {value_of_cut, labeling};
 }
 
-
+/**
+ * Extended version of a greedy joining algorithm for correlation clustering /
+ * multicut problems based on iterative graph contraction.
+ *
+ * In each iteration, the algorithm constructs a contraction set using one of two alternative strategies:
+ *
+ * (1) A deterministic Kruskal-based construction of a conflict-free spanning forest
+ *     under additional mutex constraints inspired by the mutex watershed framework.
+ *
+ * (2) A Luby-Jones style handshake heuristic that computes a maximal matching
+ *     in a distributed manner based on local edge weights.
+ *
+ * In each iteration, a subset of edges is selected according to the active mode,
+ * and the corresponding vertices are contracted in a dynamic graph representation.
+ *
+ * The parameter tau controls the fraction of nodes participating in each iteration,
+ * thereby limiting the contraction size and enabling progressive refinement.
+ *
+ * The algorithm terminates when no positive-weight edges remain.
+ *
+ * The mode parameter switches between:
+ * - 'f': deterministic Kruskal-based spanning forest construction with mutex constraints
+ * - other: Luby-Jones handshaking algorithm
+ */
 template<typename VALUE_TYPE>
 std::pair<VALUE_TYPE, std::vector<size_t>>
 greedy_joining_extended(size_t n, std::vector<std::array<size_t, 2>> edges, std::vector<VALUE_TYPE> edge_values, double tau, char mode){
@@ -234,7 +257,7 @@ greedy_joining_extended(size_t n, std::vector<std::array<size_t, 2>> edges, std:
         frac = 1;
     }
 
-    
+    // define graph structure
     for (size_t i = 0; i < edges.size(); ++i)
     {
         size_t a = edges[i][0];
@@ -279,7 +302,7 @@ greedy_joining_extended(size_t n, std::vector<std::array<size_t, 2>> edges, std:
         }
     }
         
-        
+        // terminate if there are no positive-weight edges left
         if(positive_edges.empty()){
             std::vector<size_t> labeling(n);
             partition.elementLabeling(labeling.begin());
@@ -287,26 +310,30 @@ greedy_joining_extended(size_t n, std::vector<std::array<size_t, 2>> edges, std:
         }
 
         std::vector<std::pair<size_t, size_t>> contraction_set;
+
+        // determine contraction set depending on the selected mode
         if(mode == 'f'){
             std::stable_sort(positive_edges.begin(), positive_edges.end(),
                     [](const auto& a, const auto& b) {
                         if (std::get<0>(a) != std::get<0>(b))
-                            return std::get<0>(a) > std::get<0>(b); // Gewicht absteigend
+                            return std::get<0>(a) > std::get<0>(b); // descending weight
                         else if (std::get<1>(a) != std::get<1>(b))
-                            return std::get<1>(a) < std::get<1>(b); // u aufsteigend
+                            return std::get<1>(a) < std::get<1>(b); // ascending u
                         else
-                            return std::get<2>(a) < std::get<2>(b); // v aufsteigend
+                            return std::get<2>(a) < std::get<2>(b); // ascending v
                     });
             contraction_set = kruskal(positive_edges, mutexes, frac);
         }else{
             contraction_set = luby_jones_handshake(n, graph, frac);
 
-            if(contraction_set.size() < 0.1 * frac){
+            // if |S| < frac, switch to kruskal-based strategy to avoid stagnation
+            if(contraction_set.size() < 0.1 * frac){                
                 mode = 'f';
             }
 
         }
 
+        // apply selected contractions to the dynamic graph and update the cut value
         for (auto [u,v] : contraction_set) {
             
             size_t ru = partition.find(u), rv = partition.find(v);
@@ -346,6 +373,19 @@ greedy_joining_extended(size_t n, std::vector<std::array<size_t, 2>> edges, std:
     }
 }
 
+/**
+ * Kruskal-based algorithm for constructing a conflict-free spanning forest.
+ *
+ * This variant extends the classical Kruskal algorithm by incorporating a
+ * mutex constraint structure inspired by the mutex watershed algorithm.
+ *
+ * The algorithm builds a spanning forest over the input graph while ensuring
+ * that no two vertices that are in a mutex (conflict) relation are merged
+ * into the same component.
+ *
+ * Standard union-find connectivity constraints are combined with an additional
+ * conflict graph over components, which is dynamically updated during merging.
+ */
 template <typename VALUE_TYPE>
 std::vector<std::pair<size_t, size_t>> kruskal(std::vector<std::tuple<VALUE_TYPE, size_t, size_t>>& edges, std::vector<std::unordered_set<size_t>>& mutexes, size_t frac){
     andres::Partition<size_t> components(mutexes.size());
@@ -393,6 +433,18 @@ std::vector<std::pair<size_t, size_t>> kruskal(std::vector<std::tuple<VALUE_TYPE
     return mst;
 }
 
+/**
+ * Luby-Jones handshake-based matching heuristic.
+ *
+ * The algorithm computes a maximal matching using a local selection rule:
+ * each active vertex selects its best neighbor according to edge weight,
+ * and edges are added to the matching if the selection is mutual.
+ *
+ * This procedure is repeated until no further matches can be found.
+ *
+ * The resulting matching is sorted by edge weight, and the top-k edges
+ * (defined by 'frac') are returned as a contraction set.
+ */
 template <typename VALUE_TYPE>
 std::vector<std::pair<size_t, size_t>> luby_jones_handshake(size_t n, const DynamicGraph<VALUE_TYPE>& graph, size_t frac) {
     std::vector<std::tuple<size_t, size_t, VALUE_TYPE>> weighted_matches; 
