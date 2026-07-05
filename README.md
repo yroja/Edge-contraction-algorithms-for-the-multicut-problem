@@ -5,7 +5,7 @@ This repository contains the implementations of the algorithms used in the bache
 
 ## Contents
 
-- **`greedy_joining_extended.hxx`**: Implementation of the Greedy-Joining algorithm as well as its extension for parallel edge contraction. This extension determines the contraction set using the *Luby-Jones handshake* algorithm for computing a maximal matching (mode != 'f') or the *Mutex-Kruskal* algorithm for constructing a conflict-free spanning forest (mode = 'f') on undirected, weighted graphs.  
+- **`greedy_joining_extended.hxx`**: Implementation of the Greedy-Joining algorithm as well as its extension for parallel edge contraction. This extension determines the contraction set using the *Luby-Jones-handshaking* algorithm for computing a maximal matching (mode != 'f') or the *Mutex-Kruskal* algorithm for constructing a conflict-free spanning forest (mode = 'f') on undirected, weighted graphs.  
 - **`partition.hxx`**: Disjoint-set data structure for node partitioning, used within the algorithms.  
 
 ## Usage
