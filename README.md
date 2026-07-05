@@ -1,13 +1,13 @@
-# Kantenkontraktionsalgorithmen für das Multicut-Problem
+# Edge Contraction Algorithms for the Multicut Problem
 
-Dieses Repository enthält die Implementierungen der in der Bachelor-Arbeit verwendeten Algorithmen.  
-📄 Bachelor-Arbeit: [Open PDF](./Bachelor-Arbeit.pdf)
+This repository contains the implementations of the algorithms used in the bachelor thesis.  
+📄 Bachelor Thesis: [Open PDF](./Bachelor-Thesis.pdf)
 
-## Inhalt
+## Contents
 
-- **`greedy_joining_extended.hxx`**: Implementierung des Greedy-Joining-Algorithmus sowie der Erweiterung zur parallelen Kantenkontraktion. Diese Erweiterung ermittelt die Kontraktionsmenge mittels des *Luby-Jones-Handshaking*-Algorithmus zur Berechnung eines maximalen Matchings (mode != 'f') bzw. des *Mutex-Kruskal*-Algorithmus zur Konstruktion eines konfliktfreien Spannwaldes (mode = 'f') auf ungerichteten, gewichteten Graphen.  
-- **`partition.hxx`**: Disjoint-Set-Datenstruktur zur Partitionierung von Knoten, verwendet in den Algorithmen.  
+- **`greedy_joining_extended.hxx`**: Implementation of the Greedy-Joining algorithm as well as its extension for parallel edge contraction. This extension determines the contraction set using the *Luby-Jones handshake* algorithm for computing a maximal matching (mode != 'f') or the *Mutex-Kruskal* algorithm for constructing a conflict-free spanning forest (mode = 'f') on undirected, weighted graphs.  
+- **`partition.hxx`**: Disjoint-set data structure for node partitioning, used within the algorithms.  
 
-## Nutzung
+## Usage
 
-Die Implementierungen sind in C++ geschrieben und können in Projekte eingebunden werden, die C++17 oder höher unterstützen. 
+The implementations are written in C++ and can be integrated into projects supporting C++17 or higher.
